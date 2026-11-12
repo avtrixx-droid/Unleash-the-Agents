@@ -1,0 +1,17 @@
+# Render Blueprint: free static site for the frontend.
+# The backend (database + edge functions) lives on Supabase.
+services:
+  - type: web
+    name: unleash-the-agents
+    runtime: static
+    branch: claude/lucid-pascal-f0chye
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+    # Single-page app: /stage and /host are served by index.html
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
