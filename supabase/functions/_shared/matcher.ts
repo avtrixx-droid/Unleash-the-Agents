@@ -213,18 +213,17 @@ export function cluster(people: Person[], k: number, seed = 42): number[] {
         changed = true;
       }
     }
-    for (let c = 0; c < k; c++) {
-      const acc = new Float32Array(dim);
-      let count = 0;
-      for (let i = 0; i < n; i++)
-        if (assign[i] === c) {
-          count++;
-          const v = people[i].b;
-          for (let d = 0; d < dim; d++) acc[d] += v[d];
-        }
-      if (count > 0) centres[c] = normalise(acc);
-    }
     if (!changed && iter > 0) break;
+    // Recompute centres in a single pass over people.
+    const acc = Array.from({ length: k }, () => new Float32Array(dim));
+    const counts = new Uint32Array(k);
+    for (let i = 0; i < n; i++) {
+      const a = acc[assign[i]];
+      const v = people[i].b;
+      counts[assign[i]]++;
+      for (let d = 0; d < dim; d++) a[d] += v[d];
+    }
+    for (let c = 0; c < k; c++) if (counts[c] > 0) centres[c] = normalise(acc[c]);
   }
 
   // Re-number clusters by size (largest = 0) and drop empty ones.

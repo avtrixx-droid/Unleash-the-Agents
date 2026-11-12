@@ -313,20 +313,41 @@ async function enrich(db: Admin) {
   if (latest.run_id === runId) await patchState(db, { match_status: "enriched" });
 }
 
+// Edge functions get 2s of CPU per request and each gte-small embedding costs
+// a few hundred ms, so seeding embeds at most a few new texts per call and
+// caches them. Demo people reuse ~60 phrases, so the cache fills quickly and
+// later batches cost almost nothing. The host page simply calls again.
+const NEW_EMBEDDINGS_PER_CALL = 3;
+
 async function seed(db: Admin, count: number) {
   const fakes = fakePeople(count, Math.floor(Math.random() * 1e9));
-  const rows = [];
-  for (const f of fakes) {
-    const [b, n] = await Promise.all([embed(f.building), embed(f.need)]);
-    rows.push({ ...f, building_emb: JSON.stringify(b.v), need_emb: JSON.stringify(n.v), is_demo: true });
+  const texts = [...new Set(fakes.flatMap((f) => [f.building, f.need]))];
+  const { data: cached, error: cacheErr } = await db.from("embedding_cache").select("text, emb").in("text", texts);
+  if (cacheErr) throw cacheErr;
+  const vec = new Map<string, string>((cached ?? []).map((r) => [r.text as string, String(r.emb)]));
+
+  const fresh: { text: string; emb: string }[] = [];
+  for (const t of texts.filter((t) => !vec.has(t)).slice(0, NEW_EMBEDDINGS_PER_CALL)) {
+    const e = await embed(t);
+    if (!e.model) continue;
+    const s = JSON.stringify(e.v);
+    vec.set(t, s);
+    fresh.push({ text: t, emb: s });
   }
+  if (fresh.length) await db.from("embedding_cache").upsert(fresh);
+
+  const ready = fakes.filter((f) => vec.has(f.building) && vec.has(f.need));
+  const warming = texts.some((t) => !vec.has(t));
+  if (!ready.length) return { ok: true, added: 0, warming };
+
+  const rows = ready.map((f) => ({ ...f, building_emb: vec.get(f.building), need_emb: vec.get(f.need), is_demo: true }));
   const { data, error } = await db.from("participants").insert(rows).select("id, node_no, full_name");
   if (error) throw error;
   const { error: nodeErr } = await db
     .from("nodes")
     .insert(data!.map((p) => ({ id: p.id, node_no: p.node_no, display_name: displayName(p.full_name) })));
   if (nodeErr) throw nodeErr;
-  return { ok: true, added: data!.length };
+  return { ok: true, added: data!.length, warming };
 }
 
 async function reset(db: Admin) {

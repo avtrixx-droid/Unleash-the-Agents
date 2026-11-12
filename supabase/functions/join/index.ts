@@ -5,7 +5,7 @@
 import { admin, clean, cors, embed, json } from "../_shared/server.ts";
 import { displayName } from "../_shared/matcher.ts";
 
-const MAX_PARTICIPANTS = Number(Deno.env.get("MAX_PARTICIPANTS") ?? 1000);
+const MAX_PARTICIPANTS = Number(Deno.env.get("MAX_PARTICIPANTS") ?? 700);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });

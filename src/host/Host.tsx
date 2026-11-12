@@ -173,12 +173,15 @@ export default function Host() {
                 disabled={!!busy}
                 className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm hover:bg-white/10 disabled:opacity-50"
                 onClick={async () => {
-                  setBusy(`seed${n}`);
+                  setBusy(`seed${n}:0`);
                   setError(null);
                   try {
-                    for (let added = 0; added < n; added += 25) {
-                      await call({ action: "seed", count: Math.min(25, n - added) });
-                      setBusy(`seed${n}:${added + 25}`);
+                    let added = 0;
+                    // First run warms the embedding cache (a few calls add 0 people); then it's fast.
+                    for (let attempt = 0; added < n && attempt < n / 5 + 40; attempt++) {
+                      const r = await call<{ added: number; warming: boolean }>({ action: "seed", count: Math.min(25, n - added) });
+                      added += r.added;
+                      setBusy(`seed${n}:${added}${r.warming ? ":warming" : ""}`);
                     }
                     await refresh();
                   } catch (e) {
@@ -188,7 +191,11 @@ export default function Host() {
                   }
                 }}
               >
-                {busy?.startsWith(`seed${n}`) ? `Adding… ${busy.split(":")[1] ?? 0}/${n}` : `+ ${n} demo attendees`}
+                {busy?.startsWith(`seed${n}`)
+                  ? busy.endsWith(":warming")
+                    ? `Warming up AI… ${busy.split(":")[1]}/${n}`
+                    : `Adding… ${busy.split(":")[1]}/${n}`
+                  : `+ ${n} demo attendees`}
               </button>
             ))}
             <button disabled={!!busy} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm hover:bg-white/10 disabled:opacity-50" onClick={() => run("clear", { action: "clear_demo" })}>
