@@ -1,0 +1,9 @@
+project_id = "biavgtzrylxjeeikdjus"
+
+# Both functions validate requests themselves (join: input checks; host: HOST_PIN),
+# and the new sb_publishable_ keys are not JWTs, so gateway JWT checks are off.
+[functions.join]
+verify_jwt = false
+
+[functions.host]
+verify_jwt = false
