@@ -116,8 +116,8 @@ async function callJSON(prompt: string, schema: Record<string, unknown>): Promis
       body: JSON.stringify({
         model: env("LLM_MODEL"),
         temperature: 0.7,
-        // OpenRouter: only route to providers that do not train on prompts.
-        provider: { data_collection: "deny" },
+        // OpenRouter only: route to providers that do not train on prompts.
+        ...(env("LLM_BASE_URL")!.includes("openrouter.ai") ? { provider: { data_collection: "deny" } } : {}),
         messages: [
           { role: "system", content: SYSTEM },
           { role: "user", content: prompt + "\n\nReply with only the JSON object, no prose, no code fences." },
