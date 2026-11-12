@@ -8,7 +8,7 @@ import { DEMO, PUBLIC_URL } from "../config";
 import { serverNow } from "../lib/clock";
 import { effectivePhase } from "../lib/useEventState";
 import { useDemoStage, useLiveStage, type StageData } from "../lib/stageData";
-import { blip, impact, riser, startAudio, tick } from "../lib/sound";
+import { countdownTick, joinChime, lockIn, setScene, startAudio, toggleMute } from "../lib/sound";
 import type { Phase } from "../lib/types";
 
 const MIN_MATCH_SHOW_MS = 9000; // the matching animation always runs at least this long
@@ -89,7 +89,7 @@ function StageView({ data }: { data: StageData }) {
     e.setNodes(nodes, !first);
     if (!first && fresh && performance.now() - lastBlip.current > 90) {
       lastBlip.current = performance.now();
-      blip();
+      joinChime();
     }
     if (nodes.length === 0) seen.current.clear();
   }, [nodes]);
@@ -124,19 +124,21 @@ function StageView({ data }: { data: StageData }) {
   }, [phase, showResults, stagedIds, pairsReady]);
 
   // Sound cues
-  const prevPhase = useRef<Phase | null>(null);
   useEffect(() => {
-    if (phase === prevPhase.current) return;
-    if (phase === "matching") riser(MIN_MATCH_SHOW_MS / 1000);
-    if (phase === "reveal") setTimeout(impact, 350);
-    prevPhase.current = phase;
-  }, [phase]);
+    if (!started || !phase) return;
+    setScene(phase, { matchSeconds: MIN_MATCH_SHOW_MS / 1000 });
+  }, [started, phase]);
+  const wasShowing = useRef(false);
+  useEffect(() => {
+    if (phase === "matching" && showResults && !wasShowing.current) lockIn();
+    wasShowing.current = phase === "matching" && showResults;
+  }, [phase, showResults]);
   const secondsLeft = state?.countdown_ends_at ? Math.max(0, Math.ceil((new Date(state.countdown_ends_at).getTime() - now) / 1000)) : 0;
   const lastTick = useRef(-1);
   useEffect(() => {
-    if (phase === "countdown" && secondsLeft <= 10 && secondsLeft > 0 && secondsLeft !== lastTick.current) {
+    if (phase === "countdown" && secondsLeft !== lastTick.current) {
       lastTick.current = secondsLeft;
-      tick(secondsLeft <= 3);
+      countdownTick(secondsLeft);
     }
   }, [phase, secondsLeft]);
 
@@ -144,6 +146,7 @@ function StageView({ data }: { data: StageData }) {
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
       if (ev.key === "f") document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+      if (ev.key === "m") toggleMute();
       if (!demo) return;
       const phases: Phase[] = ["lobby", "countdown", "locked", "matching", "reveal", "released"];
       const i = Number(ev.key) - 1;
@@ -279,15 +282,15 @@ function StageView({ data }: { data: StageData }) {
       {!started && (
         <button
           onClick={async () => {
+            await startAudio().catch(() => {});
             setStarted(true);
-            await startAudio();
             document.documentElement.requestFullscreen?.().catch(() => {});
           }}
           className="absolute inset-0 grid cursor-pointer place-items-center bg-ink/70 backdrop-blur-sm"
         >
           <div className="glass glow-border rounded-3xl px-12 py-10 text-center">
             <p className="font-display text-3xl font-semibold">Start the show</p>
-            <p className="mt-2 text-mist">Click to enable sound and go fullscreen · press F to toggle</p>
+            <p className="mt-2 text-mist">Click to enable sound and go fullscreen · F fullscreen · M mute</p>
           </div>
         </button>
       )}

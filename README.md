@@ -12,7 +12,18 @@ then sends everyone their own match on their phone, ready for the coffee break.
 | `/host` | you (PIN) | run of show, featured pair picker, rehearsal tools, reset |
 
 Add `?demo` to `/stage` or `/` to run everything in the browser without the
-backend (stage keys: `1`–`6` phases, `+` adds 25 people, `F` fullscreen).
+backend (stage keys: `1`–`6` phases, `+` adds 25 people). On `/stage`, `F`
+toggles fullscreen and `M` mutes.
+
+## Sound
+
+The stage has a synthesised cinematic score (no audio files): an evolving
+pad, bell chimes as people join, a heartbeat for the last 10 seconds, an
+arpeggiator with a riser while agents match, an impact when matches lock in,
+a "braam" for the reveal and a celebration on release. To use your own audio
+for any cue, add `public/sounds/<cue>.mp3` where cue is one of `ambient`
+(looped), `join`, `tick`, `heartbeat`, `matching` (looped), `lock`, `reveal`,
+`release`.
 
 ## How matching works
 
