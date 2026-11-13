@@ -193,7 +193,7 @@ function StageView({ data }: { data: StageData }) {
           people.
         </h1>
         <p className="mt-5 max-w-md text-lg leading-relaxed text-mist">
-          Scan, tell us what you're building and what you need. Our agents will pair you with the person you should meet over coffee.
+          Scan and answer one question. Our agents pair you with the person you should meet over coffee.
         </p>
         <div className="glass glow-border mt-8 inline-flex items-center gap-6 rounded-3xl p-5">
           <div ref={qrRef}>
@@ -202,11 +202,6 @@ function StageView({ data }: { data: StageData }) {
           <div className="pr-3">
             <p className="font-display text-2xl font-semibold">Scan to join</p>
             <p className="mt-1 font-mono text-sm text-mist">{PUBLIC_URL.replace(/^https?:\/\//, "")}</p>
-            <ol className="mt-4 space-y-1.5 text-sm text-mist">
-              <li><span className="text-cyan">01</span> Your name</li>
-              <li><span className="text-cyan">02</span> What you're building</li>
-              <li><span className="text-cyan">03</span> What you need help with</li>
-            </ol>
           </div>
         </div>
       </section>
@@ -317,10 +312,8 @@ function RevealView({ reveal }: { reveal: StageData["reveal"] }) {
         {[a, b].filter(Boolean).map((p, i) => (
           <div key={p.full_name + i} className="w-[min(560px,38vw)] text-center rise" style={{ animationDelay: `${0.5 + i * 0.25}s` }}>
             <h3 className="font-display text-[clamp(40px,4.4vw,76px)] font-bold leading-none tracking-tight">{p.full_name}</h3>
-            <p className="mt-4 text-sm uppercase tracking-[0.25em] text-mist">building</p>
-            <p className="mt-1 text-xl leading-snug text-white/90">{p.building}</p>
-            <p className="mt-3 text-sm uppercase tracking-[0.25em] text-mist">needs</p>
-            <p className="mt-1 text-lg leading-snug text-white/70">{p.need}</p>
+            <p className="mt-5 text-xl leading-snug text-white/85">{p.building}</p>
+            {p.need && p.need !== p.building && <p className="mt-2 text-lg leading-snug text-white/65">{p.need}</p>}
           </div>
         ))}
       </div>

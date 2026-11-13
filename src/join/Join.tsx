@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Brand } from "../components/Brand";
 import { Ring } from "../components/Ring";
-import { DEMO } from "../config";
+import { DEMO, QUESTION } from "../config";
 import { callFunction, supabase } from "../lib/supabase";
 import { serverNow } from "../lib/clock";
 import { effectivePhase, useEventState } from "../lib/useEventState";
@@ -30,7 +30,6 @@ function save(s: Saved | null) {
   }
 }
 
-const NEED_CHIPS = ["Evals", "Latency", "First users", "Fundraising", "A cofounder", "GPU credits", "Hiring", "Going to production"];
 
 export default function Join() {
   const live = useEventState("poll");
@@ -96,8 +95,7 @@ function useTicker(ms = 250) {
 
 function JoinForm({ phase, state, now, onJoined }: { phase: Phase | null; state: EventState | null; now: number; onJoined: (s: Saved) => void }) {
   const [name, setName] = useState("");
-  const [building, setBuilding] = useState("");
-  const [need, setNeed] = useState("");
+  const [answer, setAnswer] = useState("");
   const [website, setWebsite] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -113,7 +111,7 @@ function JoinForm({ phase, state, now, onJoined }: { phase: Phase | null; state:
         await new Promise((r) => setTimeout(r, 700));
         onJoined({ token: "demo", node_no: 142, name });
       } else {
-        const res = await callFunction<{ token: string; node_no: number }>("join", { full_name: name, building, need, website });
+        const res = await callFunction<{ token: string; node_no: number }>("join", { full_name: name, building: answer, need: answer, website });
         navigator.vibrate?.(20);
         onJoined({ token: res.token, node_no: res.node_no, name });
       }
@@ -137,45 +135,16 @@ function JoinForm({ phase, state, now, onJoined }: { phase: Phase | null; state:
           The round has started — join anyway and we'll add you to a match right away.
         </div>
       )}
-      <h1 className="font-display text-[34px] font-bold leading-[1.05] tracking-tight rise">
-        <span className="text-gradient">Find the person</span>
-        <br />
-        you should meet.
-      </h1>
-      <p className="mt-3 text-[15px] leading-relaxed text-mist rise" style={{ animationDelay: "0.05s" }}>
-        Three quick answers. Our agents do the rest.
-      </p>
+      <h1 className="font-display text-[28px] font-semibold leading-tight tracking-tight">Join the matching round</h1>
 
-      <div className="mt-7 space-y-5">
-        <label className="block rise" style={{ animationDelay: "0.1s" }}>
-          <span className="mb-2 block text-sm font-medium text-white/85">Your full name</span>
-          <input className="field" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" placeholder="Priya Sharma" required minLength={2} maxLength={80} enterKeyHint="next" />
+      <div className="mt-8 space-y-6">
+        <label className="block">
+          <span className="mb-2 block text-sm font-medium text-white/85">Full name</span>
+          <input className="field" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" required minLength={2} maxLength={80} enterKeyHint="next" />
         </label>
-        <label className="block rise" style={{ animationDelay: "0.15s" }}>
-          <span className="mb-2 flex items-baseline justify-between text-sm font-medium text-white/85">
-            What are you building?
-            <span className="font-mono text-xs text-mist/70">{building.length}/280</span>
-          </span>
-          <textarea className="field min-h-[92px] resize-none" value={building} onChange={(e) => setBuilding(e.target.value)} placeholder="A voice agent that books clinic appointments" required minLength={3} maxLength={280} />
-        </label>
-        <label className="block rise" style={{ animationDelay: "0.2s" }}>
-          <span className="mb-2 flex items-baseline justify-between text-sm font-medium text-white/85">
-            What do you need help with?
-            <span className="font-mono text-xs text-mist/70">{need.length}/280</span>
-          </span>
-          <textarea className="field min-h-[92px] resize-none" value={need} onChange={(e) => setNeed(e.target.value)} placeholder="Cutting voice latency, finding design partners…" required minLength={3} maxLength={280} />
-          <div className="mt-2.5 flex flex-wrap gap-2">
-            {NEED_CHIPS.map((c) => (
-              <button
-                type="button"
-                key={c}
-                onClick={() => setNeed((v) => (v.toLowerCase().includes(c.toLowerCase()) ? v : v ? `${v.replace(/[,\s]+$/, "")}, ${c.toLowerCase()}` : c))}
-                className="rounded-full border border-white/12 bg-white/[0.04] px-3 py-1.5 text-[13px] text-white/80 active:scale-95"
-              >
-                + {c}
-              </button>
-            ))}
-          </div>
+        <label className="block">
+          <span className="mb-2 block text-sm font-medium text-white/85">{QUESTION.label}</span>
+          <textarea className="field min-h-[120px] resize-none" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={QUESTION.placeholder} required minLength={3} maxLength={280} />
         </label>
         {/* honeypot */}
         <input tabIndex={-1} autoComplete="off" className="absolute -left-[9999px] h-0 w-0 opacity-0" value={website} onChange={(e) => setWebsite(e.target.value)} aria-hidden />
@@ -185,11 +154,9 @@ function JoinForm({ phase, state, now, onJoined }: { phase: Phase | null; state:
 
       <div className="mt-auto pt-8">
         <button disabled={busy} className="btn-primary w-full rounded-2xl py-4 font-display text-lg font-semibold text-white transition active:scale-[0.98] disabled:opacity-60">
-          {busy ? "Entering the network…" : "Enter the network →"}
+          {busy ? "Joining…" : "Join"}
         </button>
-        <p className="mt-3 text-center text-xs leading-relaxed text-mist/70">
-          Your name and answers are shared with your match and your group. The big screen only shows your first name and initial.
-        </p>
+        <p className="mt-3 text-center text-xs text-mist/70">Your name and answer are shared with your match.</p>
       </div>
     </form>
   );
@@ -255,7 +222,7 @@ function Waiting({ saved, phase, state, now, demoMatch }: { saved: Saved; phase:
           {phase === "lobby" && "You're node #" + saved.node_no + " in the network. Watch the screen — the countdown starts soon."}
           {phase === "countdown" && "Keep this page open. Your match will appear right here."}
           {phase === "locked" && "Everyone's in. The agents are about to start."}
-          {phase === "matching" && "Comparing what you need with what everyone else is building."}
+          {phase === "matching" && "Comparing everyone's answers."}
           {phase === "reveal" && "We're revealing tonight's featured match. Yours is next."}
           {phase === "released" && "Hang tight — this only takes a moment."}
         </p>
@@ -335,16 +302,8 @@ function MatchCard({ match, me }: { match: MyMatch; me: Saved }) {
           {partners.map((p, i) => (
             <div key={i} className={i ? "mt-6 border-t border-white/10 pt-6" : ""}>
               <h2 className="font-display text-[32px] font-bold leading-tight tracking-tight">{p.full_name}</h2>
-              <dl className="mt-3 space-y-2.5 text-[15px] leading-snug">
-                <div>
-                  <dt className="text-xs uppercase tracking-[0.2em] text-mist">Building</dt>
-                  <dd className="mt-0.5 text-white/90">{p.building}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs uppercase tracking-[0.2em] text-mist">Needs help with</dt>
-                  <dd className="mt-0.5 text-white/75">{p.need}</dd>
-                </div>
-              </dl>
+              <p className="mt-3 text-[15px] leading-snug text-white/85">{p.building}</p>
+              {p.need && p.need !== p.building && <p className="mt-2 text-[15px] leading-snug text-white/65">{p.need}</p>}
             </div>
           ))}
           <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
@@ -496,7 +455,7 @@ function useDemoPhone() {
     icebreaker: "How do you decide a retrieved chunk was actually the right one?",
     ai: true,
     enriched: true,
-    partners: [{ full_name: "Arjun Iyer", building: "An eval harness for RAG pipelines", need: "Getting real users to try our eval tool" }],
+    partners: [{ full_name: "Arjun Iyer", building: "An eval harness for RAG pipelines", need: "An eval harness for RAG pipelines" }],
     group: {
       label: "RAG Crew",
       size: 38,

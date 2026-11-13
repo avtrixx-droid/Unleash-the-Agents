@@ -4,3 +4,9 @@ export const SUPABASE_KEY =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "sb_publishable_ixkkhR5D1FPbDWGOK2RU5g_cDV2TI8F";
 export const PUBLIC_URL = (import.meta.env.VITE_PUBLIC_URL as string | undefined) || window.location.origin;
 export const DEMO = new URLSearchParams(window.location.search).has("demo");
+
+// The single sign-up question (besides name). Change it here.
+export const QUESTION = {
+  label: "What are you working on?",
+  placeholder: "A line or two about what you're building or exploring",
+};

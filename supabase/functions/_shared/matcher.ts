@@ -349,6 +349,16 @@ const ICEBREAKERS = [
 export function templateCopy(members: Person[], seed: number) {
   const [a, b] = members;
   if (!b) return { why: "You're our wildcard — say hi to anyone with your code.", icebreaker: ICEBREAKERS[0], tag: "wildcard" };
+  // One-question mode: building and need hold the same answer.
+  const single = members.some((m) => m.building.trim() === m.need.trim());
+  if (single) {
+    const names = members.map((m) => firstName(m.name));
+    const why =
+      members.length > 2
+        ? `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]} are all working around ${sharedTag(a, b)}. Compare notes.`
+        : `${names[0]} is working on ${clip(a.building, 60)}; ${names[1]} on ${clip(b.building, 60)}. Plenty to compare.`;
+    return { why, icebreaker: ICEBREAKERS[seed % ICEBREAKERS.length], tag: sharedTag(a, b) };
+  }
   const why =
     members.length > 2
       ? `${firstName(a.name)}, ${firstName(b.name)} & ${members.length - 2 === 1 ? firstName(members[2].name) : "co"} are all circling ${sharedTag(a, b)}. ${firstName(a.name)} needs help with ${clip(a.need, 60)}.`
